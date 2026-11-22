@@ -41,8 +41,14 @@ For every `MISSING` line:
 - **one**: same — explain it is the lab's robotics library
   (https://github.com/wanweiwei07/one), ask where to clone it, and with their
   OK run the printed `git clone … && pip install -e .`.
-- **PowerPoint**: you cannot install it. Ask the user to install Microsoft
-  PowerPoint (Microsoft 365 / Office) themselves, then continue.
+- **PowerPoint / LibreOffice** (needed to export slides to PDF): on Windows
+  PowerPoint is preferred, but you cannot install it — ask the user to install
+  Microsoft PowerPoint themselves, or offer to install LibreOffice instead. On
+  Linux / macOS use LibreOffice (offer the printed install command; `sudo`
+  needs the user). WPS cannot be driven from scripts, so it does not count.
+- **Linux without a desktop** (SSH, servers): `one`'s off-screen rendering still
+  needs an OpenGL display. Run figure scripts with `xvfb-run -a <python> …`
+  (offer `sudo apt install xvfb` if missing).
 
 `OPTION` lines are nice to have (e.g. the VS Code PDF viewer extension, needed
 to view slide PDFs inside VS Code); offer them the same way.
@@ -143,9 +149,11 @@ deck.save("../slides/<name>.pptx")
   short title and caption so they stay big. Prefer one strong picture per slide
   over many small ones.
 - Videos play in the .pptx; in the PDF they appear as their poster still.
-- PowerPoint runs in the background (no window). After every change to the
-  deck, re-run `make_slides.py` and `pptx_to_pdf.py` so the PDF opened in VS
-  Code is current. If the PDF is open in PowerPoint itself, ask the user to close it.
+- `pptx_to_pdf.py` uses PowerPoint on Windows and LibreOffice otherwise, both in
+  the background (no window). After every change to the deck, re-run
+  `make_slides.py` and `pptx_to_pdf.py` so the PDF opened in VS Code is
+  current. If the PDF is open in another program that locks it, ask the user
+  to close it.
 - Check the result: render a couple of PDF pages to PNG (e.g. with PyMuPDF if
   installed) or open the PDF, and fix overlaps or small pictures.
 

@@ -56,7 +56,10 @@ def check_ffmpeg():
 
 def check_vscode():
     c = _code_cmd()
-    return bool(c), c or "not found", "winget install -e --id Microsoft.VisualStudioCode"
+    hint = {"win32": "winget install -e --id Microsoft.VisualStudioCode",
+            "darwin": "brew install --cask visual-studio-code"}.get(
+        sys.platform, "sudo snap install code --classic   (or the .deb/.rpm from code.visualstudio.com)")
+    return bool(c), c or "not found", hint
 
 
 def _vscode_ext(ext_id, hint_name):
@@ -74,24 +77,39 @@ def _vscode_ext(ext_id, hint_name):
     return _f
 
 
-def check_powerpoint():
-    if sys.platform != "win32":
-        return False, "not Windows", "PowerPoint export uses Windows COM"
-    import winreg
-    try:
-        with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r"PowerPoint.Application\CurVer") as k:
-            ver = winreg.QueryValue(k, None)
-        return True, ver, ""
-    except OSError:
-        return False, "not installed", "Install Microsoft PowerPoint (Microsoft 365 / Office); "\
-            "the user must do this themselves"
+def _office_hint():
+    if sys.platform == "win32":
+        return ("Install Microsoft PowerPoint (Microsoft 365 / Office) yourself, "
+                "or LibreOffice: winget install -e --id TheDocumentFoundation.LibreOffice")
+    if sys.platform == "darwin":
+        return "brew install --cask libreoffice"
+    return "sudo apt install libreoffice-impress   (Fedora: sudo dnf install libreoffice-impress)"
+
+
+def check_office():
+    """PowerPoint (Windows) or LibreOffice, for .pptx -> .pdf export."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import pptx_to_pdf as p2p
+    if p2p.has_powerpoint():
+        try:
+            import win32com.client  # noqa: F401
+            return True, "Microsoft PowerPoint", ""
+        except ImportError:
+            return False, "PowerPoint found but pywin32 missing", f"{PIP} pywin32"
+    s = p2p.find_soffice()
+    if s:
+        return True, f"LibreOffice ({s})", ""
+    return False, "neither PowerPoint nor LibreOffice found", _office_hint()
 
 
 def check_latex():
     for exe in ("latexmk", "xelatex", "pdflatex"):
         if not shutil.which(exe):
-            return False, f"{exe} not on PATH", \
-                "winget install -e --id MiKTeX.MiKTeX  (or TeX Live from tug.org), then reopen the terminal"
+            hint = {"win32": "winget install -e --id MiKTeX.MiKTeX  (or TeX Live from tug.org), "
+                             "then reopen the terminal",
+                    "darwin": "brew install --cask mactex-no-gui"}.get(
+                sys.platform, "sudo apt install texlive-xetex texlive-lang-cjk latexmk")
+            return False, f"{exe} not on PATH", hint
     return True, shutil.which("latexmk"), ""
 
 
@@ -109,8 +127,7 @@ CORE = [
 ]
 SLIDES = [
     ("python-pptx", check_module("pptx", f"{PIP} python-pptx"), True),
-    ("pywin32 (PowerPoint COM)", check_module("win32com.client", f"{PIP} pywin32"), True),
-    ("Microsoft PowerPoint", check_powerpoint, True),
+    ("PowerPoint / LibreOffice (PDF export)", check_office, True),
 ]
 PAPER = [
     ("LaTeX (latexmk/xelatex)", check_latex, True),
