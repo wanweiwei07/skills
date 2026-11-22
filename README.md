@@ -104,7 +104,8 @@ the LaTeX PDF is rebuilt every time you save `main.tex`.
 
 Every document follows the same rules, so all slides from the lab look alike:
 
-- **18 pt** text everywhere (titles, body, labels, plot text)
+- Slide text: cover title **44 pt**, slide titles **32 pt**, body **24 pt**, secondary text (sub-bullets, labels, captions) **20 pt**
+- Text inside figures (plots, diagrams): **18 pt**
 - **1.5 pt** lines (plot curves, axes, arrows)
 - Formulas typeset by **LaTeX**, also on slides (never PowerPoint's equation editor)
 - Figures made at the size of **half** a 16:9 slide, or a **full** slide when half is too small

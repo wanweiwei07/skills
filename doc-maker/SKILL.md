@@ -71,17 +71,18 @@ Use the Python that passed the check for every later step.
 
 | Rule | Value |
 |---|---|
-| Text size | **18 pt** everywhere: slide titles, body, labels, captions, plot ticks / axis labels / legends |
+| Slide text | Cover title **44 pt**; slide titles **32 pt**; body text **24 pt**; secondary text (sub-bullets, labels under pictures, captions) **20 pt**. Formulas on slides are typeset at the size of the text they belong to |
+| Text inside figures | **18 pt**: plot ticks / axis labels / legends, labels drawn into diagrams or renders |
 | Line width | **1.5 pt** for every line: plot curves, axes, ticks, arrows / connectors drawn on slides |
 | Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
-| Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.5 in) or a **FULL** slide (12.83 × 6.5 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
+| Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.4 in) or a **FULL** slide (12.83 × 6.4 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
 | Videos | **1280 × 720 (720p, 16:9)** by default |
 
 The sizes and fonts live in `SKILL_SCRIPTS/figstyle.py`; `slides.py`,
 `one_capture.py` and `latex_math.py` already follow them — use the helpers
 rather than hand-placing things, so the rules hold automatically. Because a
 figure is made at the size it is shown, 18 pt in the figure is 18 pt on the
-slide; do not rescale figures afterwards. Paper figures reuse the same files.
+slide (a little smaller than the 20–24 pt slide text, as it should be); do not rescale figures afterwards. Paper figures reuse the same files.
 
 If a video cannot reasonably be 720p 16:9 (e.g. a tall robot that would be
 tiny in a wide frame, or the user wants a different size), explain the problem
@@ -174,7 +175,8 @@ deck.image_text("../imgs/grasp_half.png", title="Antipodal grasp",   # HALF figu
                        r"friction cone: $\|f_t\| \le \mu f_n$"])
 deck.images(["../imgs/a_half.png", "../imgs/b_half.png"], title="Before / after",
             labels=["before", "after"])                              # two HALF figures
-deck.bullets("Method", ["plain text", r"update: $\dot q = J^{+}(q)\,v$"])
+deck.bullets("Method", ["plain text, 24 pt", r"update: $\dot q = J^{+}(q)\,v$",
+                        ["sub-bullet, 20 pt", "another"]])          # list = sub-bullets
 deck.equation(r"\min_q \tfrac12\|q-q_0\|^2", title="Objective")      # display formula
 deck.video("../videos/bunny_orbit.mp4", title="Orbit view")          # poster = .png
 deck.save("../slides/<name>.pptx")
@@ -185,13 +187,13 @@ deck.save("../slides/<name>.pptx")
 ```
 
 - Any text with `$...$` (titles, bullets, labels, captions) is typeset by LaTeX
-  as a whole line at 18 pt, so formulas look like the paper. Write normal LaTeX
+  as a whole line at that text's size (32 / 24 / 20 pt), so formulas look like the paper. Write normal LaTeX
   math; Chinese / Japanese text in the same line works.
 - Use HALF figures with `image_text` / `images([a, b])`; FULL figures with
   `image`. Do not put a FULL-size figure into a half cell (it shrinks and the
-  18 pt text becomes smaller) — re-make it at the right size instead.
+  18 pt figure text becomes smaller) — re-make it at the right size instead.
 - If you draw shapes / arrows on a slide directly with python-pptx, set
-  `shape.line.width = Pt(1.5)` and text 18 pt.
+  `shape.line.width = Pt(1.5)` and use the slide text sizes above.
 - Videos play in the .pptx; in the PDF they appear as their poster still.
 - `pptx_to_pdf.py` uses PowerPoint on Windows and LibreOffice otherwise, both in
   the background (no window). After every change to the deck, re-run

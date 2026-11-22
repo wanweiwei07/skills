@@ -1,6 +1,9 @@
 r"""Build 16:9 slides with python-pptx in the house style (see figstyle.py):
-all text 18 pt, formulas typeset by LaTeX (never PowerPoint's equation editor),
-pictures sized for a HALF or FULL slide and placed as large as possible.
+cover title 44 pt, slide titles 32 pt, body text 24 pt, secondary text
+(sub-bullets, labels, captions) 20 pt; formulas typeset by LaTeX at the size of
+the text around them (never PowerPoint's equation editor); pictures sized for a
+HALF or FULL slide and placed as large as possible. (18 pt is only for text
+*inside* figures.)
 
     import sys; sys.path.insert(0, r"<path to doc-maker>/scripts")
     from slides import Deck
@@ -12,7 +15,8 @@ pictures sized for a HALF or FULL slide and placed as large as possible.
                            r"friction cone: $\|f_t\| \le \mu f_n$"])
     deck.images(["../imgs/a.png", "../imgs/b.png"], title="Before / after",
                 labels=["before", "after"])                             # two HALF figures
-    deck.bullets("Resolved rates", [r"$\dot q = J^{+}(q)\, v$", "plain text"])
+    deck.bullets("Resolved rates", [r"$\dot q = J^{+}(q)\, v$",        # 24 pt
+                                    ["sub-point, 20 pt", "another"]])   # list = sub-bullets
     deck.equation(r"\min_{q} \; \tfrac12 \|q - q_0\|^2", title="Objective")
     deck.video("../videos/orbit.mp4", title="Orbit view")               # poster = orbit.png
     deck.save("../slides/talk.pptx")                                    # then pptx_to_pdf.py
@@ -35,8 +39,12 @@ W, H = Inches(fs.SLIDE_W), Inches(fs.SLIDE_H)
 MARGIN = Inches(fs.MARGIN)
 TITLE_H = Inches(fs.TITLE_H)
 GAP = Inches(fs.GAP)
-FONT_PT = fs.FONT_PT
-LINE_H = Pt(FONT_PT * 1.25)
+COVER_PT = fs.SLIDE_COVER_PT
+TITLE_PT, BODY_PT, SMALL_PT = fs.SLIDE_TITLE_PT, fs.SLIDE_BODY_PT, fs.SLIDE_SMALL_PT
+
+
+def line_h(size_pt):
+    return Pt(size_pt * 1.25)
 TEXT_COLOR = RGBColor(0x20, 0x20, 0x20)
 EMU_PER_PT = 12700
 
@@ -51,11 +59,11 @@ class Deck:
     # ================================================================ slides
     def title(self, title, subtitle=None):
         s = self._blank()
-        self._text(s, title, Inches(0.8), Inches(3.0), W - Inches(1.6), Inches(0.6),
-                   bold=True, center=True)
+        self._text(s, title, Inches(0.8), Inches(1.9), W - Inches(1.6), Inches(1.9),
+                   size=COVER_PT, bold=True, center=True)
         if subtitle:
-            self._text(s, subtitle, Inches(0.8), Inches(3.6), W - Inches(1.6), Inches(0.6),
-                       center=True, color=RGBColor(0x55, 0x55, 0x55))
+            self._text(s, subtitle, Inches(0.8), Inches(4.0), W - Inches(1.6), Inches(0.8),
+                       size=BODY_PT, center=True, color=RGBColor(0x55, 0x55, 0x55))
         return s
 
     def bullets(self, title, items):
@@ -66,11 +74,11 @@ class Deck:
         return s
 
     def equation(self, latex, title=None, caption=None):
-        """One display formula, centered on the slide (18 pt, LaTeX)."""
+        """One display formula, centered on the slide (24 pt, LaTeX)."""
         s = self._blank()
         top = self._title(s, title) if title else MARGIN
         png, w_pt, h_pt = latex_math.render(latex, self.math_dir, display=True,
-                                            max_width_in=fs.CONTENT_W)
+                                            size_pt=BODY_PT, max_width_in=fs.CONTENT_W)
         w, h = Emu(int(w_pt * EMU_PER_PT)), Emu(int(h_pt * EMU_PER_PT))
         y = top + (H - top - MARGIN - h) / 2
         s.shapes.add_picture(png, int((W - w) / 2), int(y), w, h)
@@ -88,7 +96,7 @@ class Deck:
         top, bottom = self._area(s, title, caption)
         n = len(paths)
         cols, rows = (n, 1) if n <= 3 else (2, 2)
-        lab_h = LINE_H if labels else 0
+        lab_h = line_h(SMALL_PT) if labels else 0
         cw = (W - 2 * MARGIN - (cols - 1) * GAP) / cols
         ch = (bottom - top - (rows - 1) * GAP) / rows - lab_h
         for i, p in enumerate(paths):
@@ -96,7 +104,7 @@ class Deck:
             x, y = MARGIN + c * (cw + GAP), top + r * (ch + lab_h + GAP)
             self._fit_picture(s, p, x, y, cw, ch)
             if labels:
-                self._text(s, labels[i], x, y + ch, cw, LINE_H, center=True)
+                self._text(s, labels[i], x, y + ch, cw, lab_h, size=SMALL_PT, center=True)
         if caption:
             self._caption(s, caption)
         return s
@@ -139,55 +147,66 @@ class Deck:
 
     def _title(self, s, title):
         self._text(s, title, Inches(0.4), Inches(0.1), W - Inches(0.8), TITLE_H - Inches(0.1),
-                   bold=True)
+                   size=TITLE_PT, bold=True)
         return TITLE_H
 
     def _area(self, s, title, has_caption):
         top = self._title(s, title) if title else MARGIN
-        bottom = H - MARGIN - (LINE_H + Inches(0.05) if has_caption else 0)
+        bottom = H - MARGIN - (line_h(SMALL_PT) + Inches(0.05) if has_caption else 0)
         return top, bottom
 
     def _caption(self, s, caption):
-        self._line(s, caption, MARGIN, H - MARGIN - LINE_H, W - 2 * MARGIN, center=True)
+        self._line(s, caption, MARGIN, H - MARGIN - line_h(SMALL_PT), W - 2 * MARGIN,
+                   size=SMALL_PT, center=True)
 
     def _fit_picture(self, s, path, x, y, w, h):
         iw, ih = Image.open(path).size
         s.shapes.add_picture(os.path.abspath(path), *_fit(iw, ih, x, y, w, h))
 
     def _flow(self, s, items, x, y, w, h, center_v=False):
-        """Stack bullet rows top-down; rows with $...$ are LaTeX images."""
+        """Stack bullet rows top-down. A str item is a 24 pt bullet; a list item
+        holds 20 pt sub-bullets. Rows with $...$ are LaTeX images."""
         rows = []
         for it in items:
-            if "$" in it:
-                png, w_pt, h_pt = latex_math.render("• " + it, self.math_dir,
-                                                    max_width_in=w / 914400)
-                rows.append(("img", png, Emu(int(w_pt * EMU_PER_PT)), Emu(int(h_pt * EMU_PER_PT))))
-            else:
-                n_lines = max(1, math.ceil(_text_width_pt("• " + it) / (w / EMU_PER_PT * 0.95)))
-                rows.append(("txt", "• " + it, w, LINE_H * n_lines + Pt(6)))
+            subs = it if isinstance(it, (list, tuple)) else None
+            for t in (subs or [it]):
+                size, mark, indent = (SMALL_PT, "– ", Inches(0.4)) if subs else (BODY_PT, "• ", 0)
+                rw = w - indent
+                if "$" in t:
+                    png, w_pt, h_pt = latex_math.render(mark + t, self.math_dir, size_pt=size,
+                                                        max_width_in=rw / 914400)
+                    rows.append(("img", png, indent, Emu(int(w_pt * EMU_PER_PT)),
+                                 Emu(int(h_pt * EMU_PER_PT)), size))
+                else:
+                    n = max(1, math.ceil(_text_width_pt(mark + t, size) / (rw / EMU_PER_PT)))
+                    rows.append(("txt", mark + t, indent, rw, line_h(size) * n + Pt(4), size))
         space = Pt(10)
-        total = sum(r[3] for r in rows) + space * (len(rows) - 1)
+        total = sum(r[4] for r in rows) + space * (len(rows) - 1)
         cy = y + ((h - total) / 2 if center_v and total < h else 0)
-        for kind, content, rw, rh in rows:
+        for kind, content, indent, rw, rh, size in rows:
             if kind == "img":
-                s.shapes.add_picture(content, int(x), int(cy), rw, rh)
+                s.shapes.add_picture(content, int(x + indent), int(cy), rw, rh)
             else:
-                self._text(s, content, x, cy, rw, rh, anchor=MSO_ANCHOR.TOP)
+                self._text(s, content, x + indent, cy, rw, rh, size=size, anchor=MSO_ANCHOR.TOP)
             cy += rh + space
 
-    def _line(self, s, text, x, y, w, center=False):
+    def _line(self, s, text, x, y, w, size=BODY_PT, center=False, bold=False):
         if "$" in text:
-            png, w_pt, h_pt = latex_math.render(text, self.math_dir, max_width_in=w / 914400)
+            if bold:
+                text = r"\textbf{" + text + "}"
+            png, w_pt, h_pt = latex_math.render(text, self.math_dir, size_pt=size,
+                                                max_width_in=w / 914400)
             iw, ih = Emu(int(w_pt * EMU_PER_PT)), Emu(int(h_pt * EMU_PER_PT))
             ix = x + (w - iw) / 2 if center else x
             s.shapes.add_picture(png, int(ix), int(y), iw, ih)
         else:
-            self._text(s, text, x, y, w, LINE_H, center=center)
+            self._text(s, text, x, y, w, line_h(size), size=size, center=center, bold=bold)
 
-    def _text(self, s, text, x, y, w, h, bold=False, center=False, color=TEXT_COLOR,
-              anchor=MSO_ANCHOR.MIDDLE):
+    def _text(self, s, text, x, y, w, h, size=BODY_PT, bold=False, center=False,
+              color=TEXT_COLOR, anchor=MSO_ANCHOR.MIDDLE):
         if "$" in text:
-            return self._line(s, text, x, y, w, center=center)
+            ly = y + max(0, (h - line_h(size)) / 2) if anchor == MSO_ANCHOR.MIDDLE else y
+            return self._line(s, text, x, ly, w, size=size, center=center, bold=bold)
         tf = s.shapes.add_textbox(int(x), int(y), int(w), int(h)).text_frame
         tf.word_wrap = True
         tf.vertical_anchor = anchor
@@ -197,13 +216,35 @@ class Deck:
         if center:
             p.alignment = PP_ALIGN.CENTER
         for r in p.runs:
-            r.font.size, r.font.bold, r.font.name = Pt(FONT_PT), bold, self.font
+            r.font.size, r.font.bold, r.font.name = Pt(size), bold, self.font
             r.font.color.rgb = color
 
 
-def _text_width_pt(s):
-    """Rough rendered width at FONT_PT: CJK ~1 em, latin ~0.55 em."""
-    return sum(FONT_PT if ord(ch) > 0x2E80 else FONT_PT * 0.55 for ch in s)
+_FONT = None
+
+
+def _text_width_pt(s, size):
+    """Rendered width in pt: measured with Arial (or a metric-compatible font);
+    CJK characters count as 1 em."""
+    global _FONT
+    if _FONT is None:
+        from PIL import ImageFont
+        _FONT = False
+        for name in ("arial.ttf", "Arial.ttf", "LiberationSans-Regular.ttf",
+                     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+                     "/Library/Fonts/Arial.ttf", "/System/Library/Fonts/Supplemental/Arial.ttf"):
+            try:
+                _FONT = ImageFont.truetype(name, 100)
+                break
+            except OSError:
+                pass
+    cjk = sum(1 for ch in s if ord(ch) > 0x2E80)
+    latin = "".join(ch for ch in s if ord(ch) <= 0x2E80)
+    if _FONT:
+        w_latin = _FONT.getlength(latin) / 100 * size
+    else:
+        w_latin = len(latin) * size * 0.5
+    return w_latin + cjk * size
 
 
 def _fit(iw, ih, x, y, w, h):

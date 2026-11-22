@@ -1,10 +1,12 @@
 """House style shared by every figure, slide and video.
 
-* All text 18 pt.  * All lines 1.5 pt.  * Formulas typeset by LaTeX.
+* Text INSIDE figures 18 pt.  Slide text: cover title 44 pt, slide titles
+  32 pt, body 24 pt, secondary (sub-bullets, labels, captions) 20 pt.
+* All lines 1.5 pt.  * Formulas typeset by LaTeX.
 * Figures are made at the exact size they occupy on a 16:9 slide, either a
   HALF slide (one of two columns under the title) or a FULL slide (the whole
   area under the title). Try HALF first; use FULL when it does not fit.
-* Videos are always 1280x720 (720p, 16:9).
+* Videos default to 1280x720 (720p, 16:9).
 
 Matplotlib plots:
 
@@ -20,10 +22,10 @@ import shutil
 # ---- slide geometry (inches); must match slides.py ------------------------
 SLIDE_W, SLIDE_H = 13.333, 7.5
 MARGIN = 0.25
-TITLE_H = 0.75
+TITLE_H = 0.85
 GAP = 0.15
 CONTENT_W = SLIDE_W - 2 * MARGIN                    # 12.833
-CONTENT_H = SLIDE_H - TITLE_H - MARGIN              # 6.5
+CONTENT_H = SLIDE_H - TITLE_H - MARGIN              # 6.4
 HALF_W = (CONTENT_W - GAP) / 2                      # 6.342
 
 SIZES_IN = {
@@ -33,7 +35,11 @@ SIZES_IN = {
 DPI = 200                       # pixels per inch for raster figures / renders
 VIDEO_SIZE = (1280, 720)        # every video: 720p 16:9
 
-FONT_PT = 18
+FONT_PT = 18            # text inside figures (plots, diagrams)
+SLIDE_COVER_PT = 44     # big title on the first slide
+SLIDE_TITLE_PT = 32
+SLIDE_BODY_PT = 24
+SLIDE_SMALL_PT = 20
 LINE_PT = 1.5
 
 
