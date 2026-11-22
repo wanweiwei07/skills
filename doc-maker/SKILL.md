@@ -204,9 +204,21 @@ deck.save("../slides/<name>.pptx")
 
 ## 6. Paper (LaTeX)
 
-- `new_doc.py --tex` writes `tex/main.tex`; `\graphicspath{{../imgs/}}` is set,
-  so use `\includegraphics[width=\linewidth]{bunny_half.png}` — the same HALF /
-  FULL figure files as the slides.
+- `new_doc.py --tex` writes a **two-column** `tex/main.tex` with
+  `\graphicspath{{../imgs/}}` and two figure macros. Paper figures are the
+  **same files** as the slide figures — never make separate paper versions:
+
+  | Slide figure | In the paper | Macro |
+  |---|---|---|
+  | HALF-slide figure | one column (`figure`, `width=\columnwidth`) | `\halffig{bunny_half.png}{Caption.}{fig:bunny}` |
+  | FULL-slide figure | across both columns (`figure*`, `width=\textwidth`) | `\fullfig{scene_full.png}{Caption.}{fig:scene}` |
+
+  Never put a HALF figure across two columns or squeeze a FULL figure into one
+  column; if a figure needs the other placement, re-make it at the other size.
+  (Scaled to the column / text width, the 18 pt figure text prints at about
+  9–10 pt, matching the paper.)
+- If the user's venue template is single-column, use `width=\linewidth` for both
+  and keep HALF figures at about half the text width (`width=0.5\linewidth`).
 - Write the paper source in `tex/` (split into `sections/*.tex` with `\input`
   if long; bibliography in `tex/refs.bib`).
 - Compile: `latexmk -xelatex -interaction=nonstopmode main.tex` inside `tex/`.

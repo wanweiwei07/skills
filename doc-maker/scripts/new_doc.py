@@ -15,15 +15,28 @@ import re
 
 SUBDIRS = ("scripts", "imgs", "videos", "slides", "tex")
 
-MAIN_TEX = r"""\documentclass[11pt]{article}
-\usepackage[a4paper,margin=2.5cm]{geometry}
+MAIN_TEX = r"""\documentclass[10pt,twocolumn]{article}
+\usepackage[a4paper,margin=1.8cm,columnsep=0.6cm]{geometry}
 \usepackage{graphicx}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,bm}
 \usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
 %% Chinese text: compile with xelatex and uncomment the next line
 %% \usepackage[UTF8]{ctex}
 \graphicspath{{../imgs/}}
+
+%% Figures are the SAME files as the slides (see figstyle.py):
+%%   HALF-slide figure  -> one column      \halffig{file}{caption}{label}
+%%   FULL-slide figure  -> across both     \fullfig{file}{caption}{label}
+%% Both scale the 18 pt figure text to about 9-10 pt in print.
+\newcommand{\halffig}[3]{%%
+  \begin{figure}[t]\centering
+  \includegraphics[width=\columnwidth]{#1}
+  \caption{#2}\label{#3}\end{figure}}
+\newcommand{\fullfig}[3]{%%
+  \begin{figure*}[t]\centering
+  \includegraphics[width=\textwidth]{#1}
+  \caption{#2}\label{#3}\end{figure*}}
 
 \title{%(title)s}
 \author{}
