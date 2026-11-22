@@ -128,6 +128,9 @@ CORE = [
 SLIDES = [
     ("python-pptx", check_module("pptx", f"{PIP} python-pptx"), True),
     ("PowerPoint / LibreOffice (PDF export)", check_office, True),
+    ("PyMuPDF (formula images, PDF preview)", check_module("fitz", f"{PIP} pymupdf"), True),
+    ("matplotlib (plots)", check_module("matplotlib", f"{PIP} matplotlib"), False),
+    ("LaTeX (formulas on slides)", lambda: check_latex(), False),
 ]
 PAPER = [
     ("LaTeX (latexmk/xelatex)", check_latex, True),

@@ -100,6 +100,16 @@ if you give no name):
 Keep the PDFs open in VS Code: slides are re-exported after each change, and
 the LaTeX PDF is rebuilt every time you save `main.tex`.
 
+### House style
+
+Every document follows the same rules, so all slides from the lab look alike:
+
+- **18 pt** text everywhere (titles, body, labels, plot text)
+- **1.5 pt** lines (plot curves, axes, arrows)
+- Formulas typeset by **LaTeX**, also on slides (never PowerPoint's equation editor)
+- Figures made at the size of **half** a 16:9 slide, or a **full** slide when half is too small
+- Videos **1280×720 (720p, 16:9)** by default; Claude asks you if that does not fit
+
 ## 3. Requirements
 
 At the start Claude runs a check (`doc-maker/scripts/check_env.py`). For anything
@@ -111,9 +121,9 @@ can also install things yourself:
 | Python ≥ 3.12 | python.org or `winget install Python.Python.3.12` | `sudo apt install python3.12 python3.12-venv` | `brew install python@3.12` |
 | one | see below | see below | see below |
 | VS Code | `winget install Microsoft.VisualStudioCode` | `sudo snap install code --classic` | `brew install --cask visual-studio-code` |
-| Python packages | `pip install python-pptx pillow imageio imageio-ffmpeg pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg` | same as Linux |
+| Python packages | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib` | same as Linux |
 | Slides → PDF | **Microsoft PowerPoint** (install it yourself), or LibreOffice: `winget install TheDocumentFoundation.LibreOffice` | **LibreOffice**: `sudo apt install libreoffice-impress` | LibreOffice: `brew install --cask libreoffice` |
-| Paper (LaTeX) | MiKTeX `winget install MiKTeX.MiKTeX` or TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
+| LaTeX (paper + formulas on slides) | MiKTeX `winget install MiKTeX.MiKTeX` or TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
 | VS Code extensions | `code --install-extension james-yu.latex-workshop` and `code --install-extension tomoki1207.pdf` | same | same |
 
 Notes:

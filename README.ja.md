@@ -97,6 +97,16 @@ Claude はカレントフォルダに `YYYYMMDD_<名前>/` を作ります（名
 PDF は VS Code で開いたままにしておけます。スライドは変更のたびに書き出し直され、
 LaTeX の PDF は `main.tex` を保存するたびに再ビルドされます。
 
+### 共通スタイル
+
+研究室のスライドがそろって見えるよう、すべての文書が同じルールに従います：
+
+- 文字はすべて **18 pt**（タイトル、本文、ラベル、グラフ内の文字）
+- 線はすべて **1.5 pt**（グラフの線、軸、矢印）
+- 数式は **LaTeX** で組版（スライドでも同じ。PowerPoint の数式エディタは使わない）
+- 図は 16:9 スライドの **半分** の大きさで作り、収まらないときは **1 ページ全体** の大きさで作る
+- 動画は原則 **1280×720（720p、16:9）**。合わない場合は Claude が確認します
+
 ## 3. 必要な環境
 
 最初に Claude がチェック（`doc-maker/scripts/check_env.py`）を実行します。足りないものが
@@ -107,9 +117,9 @@ LaTeX の PDF は `main.tex` を保存するたびに再ビルドされます。
 | Python ≥ 3.12 | python.org または `winget install Python.Python.3.12` | `sudo apt install python3.12 python3.12-venv` | `brew install python@3.12` |
 | one | 下記参照 | 下記参照 | 下記参照 |
 | VS Code | `winget install Microsoft.VisualStudioCode` | `sudo snap install code --classic` | `brew install --cask visual-studio-code` |
-| Python パッケージ | `pip install python-pptx pillow imageio imageio-ffmpeg pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg` | Linux と同じ |
+| Python パッケージ | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib` | Linux と同じ |
 | スライド → PDF | **Microsoft PowerPoint**（各自でインストール）または LibreOffice：`winget install TheDocumentFoundation.LibreOffice` | **LibreOffice**：`sudo apt install libreoffice-impress` | LibreOffice：`brew install --cask libreoffice` |
-| 論文（LaTeX） | MiKTeX `winget install MiKTeX.MiKTeX` または TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
+| LaTeX（論文・スライドの数式） | MiKTeX `winget install MiKTeX.MiKTeX` または TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
 | VS Code 拡張機能 | `code --install-extension james-yu.latex-workshop` と `code --install-extension tomoki1207.pdf` | 同じ | 同じ |
 
 補足：

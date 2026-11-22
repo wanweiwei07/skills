@@ -97,6 +97,16 @@ Claude 会在当前文件夹下建 `YYYYMMDD_<名字>/`（没给名字就是 `YY
 PDF 可以一直在 VS Code 里开着：幻灯片每次修改后会重新导出，LaTeX 的 PDF 在每次保存
 `main.tex` 时自动重新编译。
 
+### 统一样式
+
+所有文档都遵守同一套规则，实验室的幻灯片看起来风格一致：
+
+- 字号统一 **18 pt**（标题、正文、标注、图里的文字）
+- 线宽统一 **1.5 pt**（曲线、坐标轴、箭头）
+- 公式一律用 **LaTeX** 排版，幻灯片里也一样（不用 PowerPoint 自带的公式编辑器）
+- 图按 16:9 幻灯片的 **半页** 尺寸做，半页放不下就按 **整页** 尺寸做
+- 视频默认 **1280×720（720p，16:9）**；不合适时 Claude 会先问你
+
 ## 3. 环境要求
 
 开始时 Claude 会先运行检查脚本（`doc-maker/scripts/check_env.py`）。缺什么它会给出安装命令，
@@ -107,9 +117,9 @@ PDF 可以一直在 VS Code 里开着：幻灯片每次修改后会重新导出�
 | Python ≥ 3.12 | python.org 或 `winget install Python.Python.3.12` | `sudo apt install python3.12 python3.12-venv` | `brew install python@3.12` |
 | one | 见下文 | 见下文 | 见下文 |
 | VS Code | `winget install Microsoft.VisualStudioCode` | `sudo snap install code --classic` | `brew install --cask visual-studio-code` |
-| Python 包 | `pip install python-pptx pillow imageio imageio-ffmpeg pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg` | 同 Linux |
+| Python 包 | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib pywin32` | `pip install python-pptx pillow imageio imageio-ffmpeg pymupdf matplotlib` | 同 Linux |
 | 幻灯片 → PDF | **Microsoft PowerPoint**（需自行安装），或 LibreOffice：`winget install TheDocumentFoundation.LibreOffice` | **LibreOffice**：`sudo apt install libreoffice-impress` | LibreOffice：`brew install --cask libreoffice` |
-| 论文（LaTeX） | MiKTeX `winget install MiKTeX.MiKTeX` 或 TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
+| LaTeX（论文和幻灯片公式） | MiKTeX `winget install MiKTeX.MiKTeX` 或 TeX Live | `sudo apt install texlive-xetex texlive-lang-cjk latexmk` | `brew install --cask mactex-no-gui` |
 | VS Code 扩展 | `code --install-extension james-yu.latex-workshop` 和 `code --install-extension tomoki1207.pdf` | 同左 | 同左 |
 
 说明：

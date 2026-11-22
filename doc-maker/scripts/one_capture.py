@@ -1,21 +1,24 @@
 """Off-screen image and video capture for `one` scenes (no window pops up).
 
+House style (figstyle.py): pictures are rendered at the exact size of a HALF or
+FULL 16:9 slide area; videos default to 1280x720 (720p, 16:9).
+
 Usage from a figure script inside <doc>/scripts/:
 
     import sys; sys.path.insert(0, r"<path to doc-maker>/scripts")
     from one import ovw, ossop
     from one_capture import OffscreenCapture
 
-    base = ovw.World(cam_pos=(.3, .3, .3), win_size=(1280, 720), visible=False)
+    base = ovw.World(win_size=(1280, 720), visible=False)
     ossop.frame().attach_to(base.scene)
-    cap = OffscreenCapture(base)            # size defaults to the World's size
-    cap.frame(robot, view="auto")           # fit the camera so the target fills the image
-    cap.snapshot("../imgs/frame.png")       # auto-crops the empty background
+    cap = OffscreenCapture(base, layout="half")   # "half" | "full" | "video"
+    cap.frame(robot, view="auto")                 # target fills the picture
+    cap.snapshot("../imgs/robot_half.png")
 
-    def step(i):                            # called before each video frame
+    def step(i):                                  # called before each video frame
         base.camera.orbit(angle_rad=0.02)
     cap.record("../videos/orbit.mp4", n_frames=150, fps=30, step=step)
-    # writes ../videos/orbit.mp4 and a poster image ../videos/orbit.png
+    # 1280x720 by default (re-framed for 16:9); also writes ../videos/orbit.png
 
 Create the World with ``visible=False``; never call ``base.run()``.
 """
@@ -26,15 +29,27 @@ import pyglet.gl as gl
 
 import one.viewer.render_target as ovrt
 
+import figstyle as fs
+
 
 class OffscreenCapture:
-    def __init__(self, base, width=None, height=None, samples=4):
+    def __init__(self, base, layout="half", width=None, height=None, samples=4):
         self.base = base
-        self.width = int(width or base.width)
-        self.height = int(height or base.height)
-        base.switch_to()
-        base.camera._rebuild_projmat(self.width, self.height)
-        self.rt = ovrt.RenderTarget(self.width, self.height, samples=samples)
+        self.layout = layout
+        self.samples = samples
+        self._last_frame = None
+        w, h = (width, height) if width and height else fs.size_px(layout)
+        self.resize(w, h)
+
+    def resize(self, width, height):
+        """Change the output size; re-applies the last frame() call."""
+        self.width, self.height = int(width), int(height)
+        self.base.switch_to()
+        self.base.camera._rebuild_projmat(self.width, self.height)
+        self.rt = ovrt.RenderTarget(self.width, self.height, samples=self.samples)
+        if self._last_frame is not None:
+            self.frame(*self._last_frame)
+        return self
 
     def grab(self):
         """Render the scene once and return an (H, W, 3) uint8 RGB array."""
@@ -63,6 +78,7 @@ class OffscreenCapture:
                  target toward the camera.
         fill:    fraction of the image the targets' extent should occupy (0..1).
         """
+        self._last_frame = (targets, view, fill, up)
         pts = _world_points(self.base.scene if targets is None else targets)
         if len(pts) == 0:
             raise ValueError("frame(): targets have no visible geometry")
@@ -84,9 +100,9 @@ class OffscreenCapture:
         cam.set_to(pos=center + d * dist, look_at=center, up=upv)
         return self
 
-    def snapshot(self, path, crop=True, pad=0.03):
-        """Save a PNG. ``crop`` trims the empty background border (keeping a
-        ``pad`` fraction of margin) so the subject fills the picture."""
+    def snapshot(self, path, crop=False, pad=0.03):
+        """Save a PNG at the layout size (exact HALF / FULL slide shape).
+        ``crop=True`` instead trims the empty background border (free aspect)."""
         from PIL import Image
         _mkdir_for(path)
         img = self.grab()
@@ -95,30 +111,38 @@ class OffscreenCapture:
         Image.fromarray(img).save(path)
         return os.path.abspath(path)
 
-    def record(self, path, n_frames, fps=30, step=None, poster="first"):
-        """Record ``n_frames`` frames to an .mp4.
+    def record(self, path, n_frames, fps=30, step=None, poster="first",
+               size=fs.VIDEO_SIZE):
+        """Record ``n_frames`` frames to an .mp4, by default 1280x720 (16:9).
 
         ``step(i)`` is called before frame ``i`` to move robots / camera.
         A poster image (same name, .png) is saved next to the video; slides use
         it as the still shown in the exported PDF. ``poster`` is "first",
-        "last", or a frame index.
+        "last", or a frame index. The capture is temporarily resized (and the
+        last frame() re-applied for the new aspect), then restored.
         """
         import imageio.v2 as iio
         from PIL import Image
         _mkdir_for(path)
+        old = (self.width, self.height)
+        w, h = int(size[0]) // 2 * 2, int(size[1]) // 2 * 2   # libx264: even sizes
+        if (w, h) != old:
+            self.resize(w, h)
         poster_idx = {"first": 0, "last": n_frames - 1}.get(poster, poster)
         poster_path = os.path.splitext(path)[0] + ".png"
-        # libx264 needs even dimensions
-        h, w = self.height - self.height % 2, self.width - self.width % 2
-        with iio.get_writer(path, fps=fps, codec="libx264", quality=8,
-                            pixelformat="yuv420p", macro_block_size=1) as writer:
-            for i in range(n_frames):
-                if step is not None:
-                    step(i)
-                frame = self.grab()[:h, :w]
-                writer.append_data(frame)
-                if i == poster_idx:
-                    Image.fromarray(frame).save(poster_path)
+        try:
+            with iio.get_writer(path, fps=fps, codec="libx264", quality=8,
+                                pixelformat="yuv420p", macro_block_size=1) as writer:
+                for i in range(n_frames):
+                    if step is not None:
+                        step(i)
+                    frame = self.grab()
+                    writer.append_data(frame)
+                    if i == poster_idx:
+                        Image.fromarray(frame).save(poster_path)
+        finally:
+            if (w, h) != old:
+                self.resize(*old)
         return os.path.abspath(path), os.path.abspath(poster_path)
 
 

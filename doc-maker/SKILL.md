@@ -67,32 +67,55 @@ Use the Python that passed the check for every later step.
   make a second one.
 - Then open it in VS Code so they can watch files appear: `code <folder>`.
 
-## 3. Figures and videos with `one`
+## 3. House style (always)
+
+| Rule | Value |
+|---|---|
+| Text size | **18 pt** everywhere: slide titles, body, labels, captions, plot ticks / axis labels / legends |
+| Line width | **1.5 pt** for every line: plot curves, axes, ticks, arrows / connectors drawn on slides |
+| Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
+| Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.5 in) or a **FULL** slide (12.83 × 6.5 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
+| Videos | **1280 × 720 (720p, 16:9)** by default |
+
+The sizes and fonts live in `SKILL_SCRIPTS/figstyle.py`; `slides.py`,
+`one_capture.py` and `latex_math.py` already follow them — use the helpers
+rather than hand-placing things, so the rules hold automatically. Because a
+figure is made at the size it is shown, 18 pt in the figure is 18 pt on the
+slide; do not rescale figures afterwards. Paper figures reuse the same files.
+
+If a video cannot reasonably be 720p 16:9 (e.g. a tall robot that would be
+tiny in a wide frame, or the user wants a different size), explain the problem
+and ask the user what they prefer before recording at another `size=`.
+
+## 4. Figures and videos
 
 For every picture or video write a script in `<doc>/scripts/` (e.g.
 `scripts/fig_grasp_bunny.py`) and run it **from `<doc>/scripts/`** so the
-relative output paths `../imgs/…` and `../videos/…` work. Never call
-`base.run()` and always create the World with `visible=False` — nothing should
-pop up on the screen.
+relative output paths `../imgs/…` and `../videos/…` work.
+
+### Scenes rendered with `one`
+
+Never call `base.run()` and always create the World with `visible=False` —
+nothing should pop up on the screen.
 
 ```python
 import sys; sys.path.insert(0, r"SKILL_SCRIPTS")      # absolute path
 from one import ovw, ossop, osso, ouc
 from one_capture import OffscreenCapture
 
-base = ovw.World(win_size=(1920, 1080), visible=False)
+base = ovw.World(win_size=(1280, 720), visible=False)
 obj = osso.SceneObject.from_file("bunny.stl")
 obj.attach_to(base.scene)
 ossop.frame().attach_to(base.scene)
 
-cap = OffscreenCapture(base)
-cap.frame(obj, view="auto")            # camera fits the target, see below
-cap.snapshot("../imgs/bunny.png")      # auto-crops empty background
+cap = OffscreenCapture(base, layout="half")   # "half" or "full" slide size
+cap.frame(obj, view="auto")                   # camera fits the target, see below
+cap.snapshot("../imgs/bunny_half.png")
 
-def step(i):                           # move robot / objects / camera per frame
+def step(i):                                  # move robot / objects / camera per frame
     base.camera.orbit(angle_rad=0.02)
 cap.record("../videos/bunny_orbit.mp4", n_frames=180, fps=30, step=step)
-# also writes ../videos/bunny_orbit.png (poster: shown in slides PDF)
+# 1280x720, re-framed for 16:9; also writes ../videos/bunny_orbit.png (poster)
 ```
 
 Learn the scene API from the `one` repo itself (its `CLAUDE.md`,
@@ -112,10 +135,8 @@ with a tiny robot in the middle of a white image is a failure.
   `"iso"`, or a 3-vector from the target toward the camera. E.g. a grasp →
   look so both fingers and the contact are visible; a planar layout → `"top"`.
 - If two things must be compared, frame both together (`targets=[a, b]`).
-- `snapshot()` crops the leftover background automatically; keep it on.
-- Pick `win_size` with the shape of where the image goes: a single slide
-  picture → about 1920×1000 (wide); a paper figure column → about 1200×900;
-  two side-by-side slide pictures → about 1000×1000 each.
+- A tall subject suits `layout="half"` (nearly square); a wide scene suits
+  `"full"`. `cap.resize(*figstyle.size_px("full"))` switches size and re-frames.
 - For videos, frame on the whole motion: call `frame()` on the targets at the
   pose where they are spread out most (or frame a list of the start and end
   poses' objects), so nothing leaves the picture during the clip.
@@ -123,7 +144,21 @@ with a tiny robot in the middle of a white image is a failure.
   subject is small, cut off, hidden behind something, or the view does not show
   what the user asked about, change the view / targets and re-render.
 
-## 4. Slides
+### Plots and diagrams (matplotlib)
+
+```python
+import sys; sys.path.insert(0, r"SKILL_SCRIPTS")
+import figstyle
+fig, ax = figstyle.figure("half")             # 18 pt, 1.5 pt lines, LaTeX labels
+ax.plot(t, q, label=r"$q_1(t)$")
+ax.set_xlabel(r"$t$ [s]")
+figstyle.save(fig, "../imgs/joint_traj_half.png")   # keeps the exact slide size
+```
+
+Do not override the font sizes or line widths. For many subplots use
+`figstyle.figure("full", ncols=2)` etc.
+
+## 5. Slides
 
 Build the deck with a script `<doc>/scripts/make_slides.py` using the helper,
 then export the PDF:
@@ -131,13 +166,17 @@ then export the PDF:
 ```python
 import sys; sys.path.insert(0, r"SKILL_SCRIPTS")
 from slides import Deck
-deck = Deck()
+deck = Deck(math_dir="../imgs/math")       # LaTeX formula images are cached here
 deck.title("Grasp Planning with one", "Lab meeting · 2026-11-22")
-deck.image("../imgs/bunny.png", title="Antipodal grasps")            # fills the slide
-deck.images(["../imgs/a.png", "../imgs/b.png"], title="Before / after",
-            labels=["before", "after"])                               # 1-4 pictures
-deck.video("../videos/bunny_orbit.mp4", title="Orbit view")           # poster = .png
-deck.bullets("Summary", ["…", "…"])
+deck.image("../imgs/scene_full.png", title="Scene")                  # one FULL figure
+deck.image_text("../imgs/grasp_half.png", title="Antipodal grasp",   # HALF figure + text
+                items=["contacts on opposite faces",
+                       r"friction cone: $\|f_t\| \le \mu f_n$"])
+deck.images(["../imgs/a_half.png", "../imgs/b_half.png"], title="Before / after",
+            labels=["before", "after"])                              # two HALF figures
+deck.bullets("Method", ["plain text", r"update: $\dot q = J^{+}(q)\,v$"])
+deck.equation(r"\min_q \tfrac12\|q-q_0\|^2", title="Objective")      # display formula
+deck.video("../videos/bunny_orbit.mp4", title="Orbit view")          # poster = .png
 deck.save("../slides/<name>.pptx")
 ```
 
@@ -145,22 +184,29 @@ deck.save("../slides/<name>.pptx")
 <python> SKILL_SCRIPTS/pptx_to_pdf.py <doc>/slides/<name>.pptx
 ```
 
-- Pictures and videos are scaled as large as the slide allows; keep at most a
-  short title and caption so they stay big. Prefer one strong picture per slide
-  over many small ones.
+- Any text with `$...$` (titles, bullets, labels, captions) is typeset by LaTeX
+  as a whole line at 18 pt, so formulas look like the paper. Write normal LaTeX
+  math; Chinese / Japanese text in the same line works.
+- Use HALF figures with `image_text` / `images([a, b])`; FULL figures with
+  `image`. Do not put a FULL-size figure into a half cell (it shrinks and the
+  18 pt text becomes smaller) — re-make it at the right size instead.
+- If you draw shapes / arrows on a slide directly with python-pptx, set
+  `shape.line.width = Pt(1.5)` and text 18 pt.
 - Videos play in the .pptx; in the PDF they appear as their poster still.
 - `pptx_to_pdf.py` uses PowerPoint on Windows and LibreOffice otherwise, both in
   the background (no window). After every change to the deck, re-run
   `make_slides.py` and `pptx_to_pdf.py` so the PDF opened in VS Code is
   current. If the PDF is open in another program that locks it, ask the user
   to close it.
-- Check the result: render a couple of PDF pages to PNG (e.g. with PyMuPDF if
-  installed) or open the PDF, and fix overlaps or small pictures.
+- Check the result: render the PDF pages to PNG with PyMuPDF
+  (`fitz.open(pdf)[i].get_pixmap(dpi=60).save(...)`) and look at them; fix
+  overlaps, overflowing text or small pictures.
 
-## 5. Paper (LaTeX)
+## 6. Paper (LaTeX)
 
 - `new_doc.py --tex` writes `tex/main.tex`; `\graphicspath{{../imgs/}}` is set,
-  so use `\includegraphics[width=\linewidth]{bunny.png}`.
+  so use `\includegraphics[width=\linewidth]{bunny_half.png}` — the same HALF /
+  FULL figure files as the slides.
 - Write the paper source in `tex/` (split into `sections/*.tex` with `\input`
   if long; bibliography in `tex/refs.bib`).
 - Compile: `latexmk -xelatex -interaction=nonstopmode main.tex` inside `tex/`.
@@ -170,7 +216,7 @@ deck.save("../slides/<name>.pptx")
   `tex/main.tex` and use "View LaTeX PDF" once.
 - Fix every compile error before finishing; read `main.log` when needed.
 
-## 6. Finish
+## 7. Finish
 
 Tell the user what was produced (paths of the .pptx / .pdf / main.pdf and the
 scripts), and that any figure can be regenerated by re-running its script in
