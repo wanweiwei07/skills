@@ -23,10 +23,9 @@ HALF or FULL slide and placed as large as possible. (18 pt is only for text
 
 Any text containing ``$...$`` is typeset by LaTeX as a whole line.
 
-Logo: every slide carries the lab logo (``assets/logo.png``, transparent
-background) in the top-right corner of the title bar; the cover shows it
-larger, centered above the title. ``Deck(logo="path.png")`` swaps it,
-``Deck(logo=None)`` turns it off.
+Logo: the cover shows the lab logo (``assets/logo.png``, transparent
+background) centered above the title; other slides carry no logo.
+``Deck(logo="path.png")`` swaps it, ``Deck(logo=None)`` turns it off.
 """
 import math
 import os
@@ -53,8 +52,7 @@ def line_h(size_pt):
 TEXT_COLOR = RGBColor(0x20, 0x20, 0x20)
 EMU_PER_PT = 12700
 DEFAULT_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "logo.png")
-LOGO_H = Inches(fs.TITLE_H - 0.12)      # logo height in the title bar
-COVER_LOGO_H = Inches(1.5)              # logo height on the cover
+COVER_LOGO_H = Inches(2.2)              # logo height on the cover
 
 
 class Deck:
@@ -67,15 +65,26 @@ class Deck:
 
     # ================================================================ slides
     def title(self, title, subtitle=None):
+        """Cover: logo, big title and subtitle stacked as one block, centered
+        on the slide (a little above the middle, which looks centered)."""
         s = self._blank()
+        tw = W - Inches(1.6)
+        n = max(1, math.ceil(_text_width_pt(title, COVER_PT) / (tw / EMU_PER_PT * 0.95)))
+        title_h = line_h(COVER_PT) * n
+        logo_h = COVER_LOGO_H if self.logo else 0
+        gap1, gap2 = Inches(0.35), Inches(0.3)
+        sub_h = line_h(BODY_PT) if subtitle else 0
+        total = logo_h + (gap1 if logo_h else 0) + title_h + (gap2 + sub_h if subtitle else 0)
+        y = (H - total) / 2 - Inches(0.2)
         if self.logo:
             iw, ih = Image.open(self.logo).size
-            lw = int(COVER_LOGO_H * iw / ih)
-            s.shapes.add_picture(self.logo, int((W - lw) / 2), Inches(0.35), lw, COVER_LOGO_H)
-        self._text(s, title, Inches(0.8), Inches(1.9), W - Inches(1.6), Inches(1.9),
-                   size=COVER_PT, bold=True, center=True)
+            lw = int(logo_h * iw / ih)
+            s.shapes.add_picture(self.logo, int((W - lw) / 2), int(y), lw, logo_h)
+            y += logo_h + gap1
+        self._text(s, title, Inches(0.8), y, tw, title_h, size=COVER_PT, bold=True, center=True)
+        y += title_h + gap2
         if subtitle:
-            self._text(s, subtitle, Inches(0.8), Inches(4.0), W - Inches(1.6), Inches(0.8),
+            self._text(s, subtitle, Inches(0.8), y, tw, sub_h,
                        size=BODY_PT, center=True, color=RGBColor(0x55, 0x55, 0x55))
         return s
 
@@ -89,10 +98,7 @@ class Deck:
     def equation(self, latex, title=None, caption=None):
         """One display formula, centered on the slide (24 pt, LaTeX)."""
         s = self._blank()
-        if title:
-            top = self._title(s, title)
-        else:
-            top = TITLE_H if self._logo(s) else MARGIN
+        top = self._title(s, title) if title else MARGIN
         png, w_pt, h_pt = latex_math.render(latex, self.math_dir, display=True,
                                             size_pt=BODY_PT, max_width_in=fs.CONTENT_W)
         w, h = Emu(int(w_pt * EMU_PER_PT)), Emu(int(h_pt * EMU_PER_PT))
@@ -161,28 +167,13 @@ class Deck:
     def _blank(self):
         return self.prs.slides.add_slide(self.prs.slide_layouts[6])
 
-    def _logo(self, s):
-        """Logo in the top-right corner of the title bar; returns its width."""
-        if not self.logo:
-            return 0
-        iw, ih = Image.open(self.logo).size
-        lw = int(LOGO_H * iw / ih)
-        s.shapes.add_picture(self.logo, int(W - MARGIN - lw), int((TITLE_H - LOGO_H) / 2),
-                             lw, LOGO_H)
-        return lw
-
     def _title(self, s, title):
-        lw = self._logo(s)
-        right = lw + Inches(0.2) if lw else 0
-        self._text(s, title, Inches(0.4), Inches(0.1), W - Inches(0.8) - right,
-                   TITLE_H - Inches(0.1), size=TITLE_PT, bold=True)
+        self._text(s, title, Inches(0.4), Inches(0.1), W - Inches(0.8), TITLE_H - Inches(0.1),
+                   size=TITLE_PT, bold=True)
         return TITLE_H
 
     def _area(self, s, title, has_caption):
-        if title:
-            top = self._title(s, title)
-        else:                       # keep the logo; content starts below it
-            top = TITLE_H if self._logo(s) else MARGIN
+        top = self._title(s, title) if title else MARGIN
         bottom = H - MARGIN - (line_h(SMALL_PT) + Inches(0.05) if has_caption else 0)
         return top, bottom
 

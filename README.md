@@ -107,7 +107,7 @@ Every document follows the same rules, so all slides from the lab look alike:
 - Slide text: cover title **44 pt**, slide titles **32 pt**, body **24 pt**, secondary text (sub-bullets, labels, captions) **20 pt**
 - Text inside figures (plots, diagrams): **18 pt**
 - **1.5 pt** lines (plot curves, axes, arrows)
-- Lab logo in the top-right corner of every slide (larger on the cover); replace `doc-maker/assets/logo.png` (transparent PNG) to use your own
+- Lab logo on the cover only, above the title; replace `doc-maker/assets/logo.png` (transparent PNG) to use your own
 - Formulas typeset by **LaTeX**, also on slides (never PowerPoint's equation editor)
 - Figures made at the size of **half** a 16:9 slide, or a **full** slide when half is too small
 - Videos **1280×720 (720p, 16:9)** by default; Claude asks you if that does not fit
