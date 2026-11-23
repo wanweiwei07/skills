@@ -74,9 +74,9 @@ Use the Python that passed the check for every later step.
 | Slide text | Cover title **44 pt**; slide titles **32 pt**; body text **24 pt**; secondary text (sub-bullets, labels under pictures, captions) **20 pt**. Formulas on slides are typeset at the size of the text they belong to |
 | Text inside figures | **18 pt**: plot ticks / axis labels / legends, labels drawn into diagrams or renders |
 | Line width | **1.5 pt** for every line: plot curves, axes, ticks, arrows / connectors drawn on slides |
-| Logo | Only on the **cover**: `Deck.title()` stacks the lab logo (`assets/logo.png`, transparent background), the title and the subtitle as one block centered on the slide. Other slides have no logo. `Deck(logo=None)` only if the user asks for no logo, `Deck(logo="path.png")` for another logo |
+| Logo | On **every slide except the cover**: the lab logo (`assets/logo.png`, transparent background) sits in the top-right corner of the title bar, 0.85 in tall. Keep that corner free. The cover has no logo. `Deck(logo=None)` only if the user asks for no logo, `Deck(logo="path.png")` for another logo |
 | Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
-| Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.4 in) or a **FULL** slide (12.83 × 6.4 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
+| Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.15 in) or a **FULL** slide (12.83 × 6.15 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
 | Videos | **1280 × 720 (720p, 16:9)** by default |
 
 The sizes and fonts live in `SKILL_SCRIPTS/figstyle.py`; `slides.py`,

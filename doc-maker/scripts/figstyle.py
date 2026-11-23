@@ -22,10 +22,10 @@ import shutil
 # ---- slide geometry (inches); must match slides.py ------------------------
 SLIDE_W, SLIDE_H = 13.333, 7.5
 MARGIN = 0.25
-TITLE_H = 0.85
+TITLE_H = 1.1             # title bar, tall enough for the logo on the right
 GAP = 0.15
 CONTENT_W = SLIDE_W - 2 * MARGIN                    # 12.833
-CONTENT_H = SLIDE_H - TITLE_H - MARGIN              # 6.4
+CONTENT_H = SLIDE_H - TITLE_H - MARGIN              # 6.15
 HALF_W = (CONTENT_W - GAP) / 2                      # 6.342
 
 SIZES_IN = {
