@@ -74,6 +74,7 @@ Use the Python that passed the check for every later step.
 | Slide text | Cover title **44 pt**; slide titles **32 pt**; body text **24 pt**; secondary text (sub-bullets, labels under pictures, captions) **20 pt**. Formulas on slides are typeset at the size of the text they belong to |
 | Text inside figures | **18 pt**: plot ticks / axis labels / legends, labels drawn into diagrams or renders |
 | Line width | **1.5 pt** for every line: plot curves, axes, ticks, arrows / connectors drawn on slides |
+| Logo | `Deck` puts the lab logo (`assets/logo.png`, transparent background) in the **top-right corner of the title bar** on every slide and larger, centered above the title, on the cover. Keep that corner free; `Deck(logo=None)` only if the user asks for no logo, `Deck(logo="path.png")` for another logo |
 | Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
 | Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.4 in) or a **FULL** slide (12.83 × 6.4 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
 | Videos | **1280 × 720 (720p, 16:9)** by default |
