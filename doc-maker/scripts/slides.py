@@ -59,6 +59,7 @@ LOGO_TOP = Inches(0.15)                 # gap above the logo
 class Deck:
     def __init__(self, math_dir="../imgs/math", font="Arial", logo=DEFAULT_LOGO):
         self.logo = os.path.abspath(logo) if logo and os.path.exists(logo) else None
+        self.warnings = []          # short last lines in LaTeX-typeset rows
         self.prs = Presentation()
         self.prs.slide_width, self.prs.slide_height = W, H
         self.font = font
@@ -156,6 +157,8 @@ class Deck:
     def save(self, path):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         self.prs.save(path)
+        for w in self.warnings:
+            print("WARNING:", w)
         return os.path.abspath(path)
 
     # ============================================================ internals
@@ -207,6 +210,7 @@ class Deck:
                 if "$" in t:
                     png, w_pt, h_pt = latex_math.render(mark + t, self.math_dir, size_pt=size,
                                                         max_width_in=rw / 914400)
+                    self._check_runt(png, h_pt, size, t)
                     rows.append(("img", png, indent, Emu(int(w_pt * EMU_PER_PT)),
                                  Emu(int(h_pt * EMU_PER_PT)), size))
                 else:
@@ -222,12 +226,24 @@ class Deck:
                 self._text(s, content, x + indent, cy, rw, rh, size=size, anchor=MSO_ANCHOR.TOP)
             cy += rh + space
 
+    def _check_runt(self, png, h_pt, size, text):
+        """A LaTeX row that wrapped and left only a few words on its last line
+        is recorded in self.warnings (printed by save())."""
+        if h_pt < size * 1.25 * 1.6:            # one line: nothing to check
+            return
+        frac = _last_line_frac(png[:-4] + ".pdf")
+        if frac is not None and frac < 1 / 2:
+            self.warnings.append(
+                f"slide {len(self.prs.slides)}: last line only {frac:.0%} full, reword to "
+                f"pull it up: {text[:60]!r}")
+
     def _line(self, s, text, x, y, w, size=BODY_PT, center=False, bold=False):
         if "$" in text:
             if bold:
                 text = r"\textbf{" + text + "}"
             png, w_pt, h_pt = latex_math.render(text, self.math_dir, size_pt=size,
                                                 max_width_in=w / 914400)
+            self._check_runt(png, h_pt, size, text)
             iw, ih = Emu(int(w_pt * EMU_PER_PT)), Emu(int(h_pt * EMU_PER_PT))
             ix = x + (w - iw) / 2 if center else x
             s.shapes.add_picture(png, int(ix), int(y), iw, ih)
@@ -277,6 +293,28 @@ def _text_width_pt(s, size):
     else:
         w_latin = len(latin) * size * 0.5
     return w_latin + cjk * size
+
+
+def _last_line_frac(pdf):
+    """How full the last line of a LaTeX-rendered row is (0..1). Rows are
+    words grouped by vertical overlap, so sub/superscripts stay in their line."""
+    import fitz
+    with fitz.open(pdf) as doc:
+        words = doc[0].get_text("words")
+    rows = []
+    for x0, y0, x1, y1, *_ in sorted(words, key=lambda w: (w[1] + w[3]) / 2):
+        for r in rows:
+            if y0 < r[3] - (r[3] - r[1]) * 0.3 and y1 > r[1] + (r[3] - r[1]) * 0.3:
+                r[0], r[1], r[2], r[3] = min(r[0], x0), min(r[1], y0), max(r[2], x1), max(r[3], y1)
+                break
+        else:
+            rows.append([x0, y0, x1, y1])
+    if len(rows) < 2:
+        return None
+    rows.sort(key=lambda r: r[1])
+    left = min(r[0] for r in rows)
+    width = max(r[2] for r in rows) - left
+    return (rows[-1][2] - rows[-1][0]) / width if width > 0 else None
 
 
 def _fit(iw, ih, x, y, w, h):

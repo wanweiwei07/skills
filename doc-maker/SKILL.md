@@ -78,6 +78,7 @@ Use the Python that passed the check for every later step.
 | Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
 | Figure size | Made at the exact size of a **HALF** slide (6.34 × 6.15 in) or a **FULL** slide (12.83 × 6.15 in) of a 16:9 deck. Try HALF first; use FULL only when the content does not fit legibly in half |
 | Videos | **1280 × 720 (720p, 16:9)** by default |
+| No short dangling lines | A paragraph / bullet / caption must not end with a line holding only a word or two and mostly blank. **Reword** it (cut a redundant word, use a shorter phrase, or merge two short sentences) so the leftover pulls up into the line above. Slides: a wrapped line must be at least **half** full; paper: the last line of a paragraph at least **one third** full. Never fix it by shrinking the font, changing margins, or `\vspace` |
 
 The sizes and fonts live in `SKILL_SCRIPTS/figstyle.py`; `slides.py`,
 `one_capture.py` and `latex_math.py` already follow them — use the helpers
@@ -204,6 +205,11 @@ deck.save("../slides/<name>.pptx")
 - Check the result: render the PDF pages to PNG with PyMuPDF
   (`fitz.open(pdf)[i].get_pixmap(dpi=60).save(...)`) and look at them; fix
   overlaps, overflowing text or small pictures.
+- Short dangling lines: `deck.save()` prints a `WARNING` for every LaTeX row
+  (text with `$...$`) whose last line is less than half full, and
+  `<python> SKILL_SCRIPTS/check_lines.py <doc>/slides/<name>.pdf` lists the
+  plain-text ones. Reword each listed bullet / caption, rebuild, and repeat
+  until both are clean. A one-line bullet is never a problem.
 
 ## 6. Paper (LaTeX)
 
@@ -230,6 +236,12 @@ deck.save("../slides/<name>.pptx")
   rebuild and refresh the PDF tab on every save — tell the user to open
   `tex/main.tex` and use "View LaTeX PDF" once.
 - Fix every compile error before finishing; read `main.log` when needed.
+- Short dangling lines: after compiling run
+  `<python> SKILL_SCRIPTS/check_lines.py <doc>/tex/main.pdf`. It lists every
+  paragraph whose last line is less than a third full (page and text). Reword
+  those paragraphs so the leftover words move up into the line above (the
+  template already loads `microtype`, which helps), recompile, and repeat until
+  it reports no short lines.
 
 ## 7. Finish
 

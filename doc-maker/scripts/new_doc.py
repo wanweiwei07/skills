@@ -20,6 +20,7 @@ MAIN_TEX = r"""\documentclass[10pt,twocolumn]{article}
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb,bm}
 \usepackage{booktabs}
+\usepackage{microtype}          %% better line breaks, fewer short last lines
 \usepackage[hidelinks]{hyperref}
 %% Chinese text: compile with xelatex and uncomment the next line
 %% \usepackage[UTF8]{ctex}
