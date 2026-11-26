@@ -149,15 +149,32 @@ venv\Scripts\activate              # Windows   (Linux/macOS: source venv/bin/act
 pip install -e .
 ```
 
-Use the same Python (or venv) when you work with Claude, so that `import one`
-works. Check with `python -c "import one; print(one.__file__)"`.
+Or with [uv](https://docs.astral.sh/uv/) (no pip inside the venv; nothing to activate):
+
+```bash
+git clone https://github.com/wanweiwei07/one.git
+cd one
+uv venv --python 3.12              # creates one/.venv
+uv pip install --python .venv -e .
+```
+
+You do not need to activate the venv before starting Claude:
+`doc-maker/scripts/find_python.py` looks for `$VIRTUAL_ENV` / `$CONDA_PREFIX`,
+`.venv` / `venv` in the work folder and its parents, and `one/.venv` / `one/venv`
+next to them or in your home folder, and remembers the one it finds. For a uv
+venv, packages are installed with `uv pip install --python <that python>`.
+Note that `uv sync` in the one folder removes packages not listed in one's
+`uv.lock` (python-pptx etc.); run the check again afterwards.
+
+Check with `<venv python> -c "import one; print(one.__file__)"`.
 
 ## 4. Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | Claude does not use the skill | Check that `SKILL.md` is at `<skills folder>/doc-maker/SKILL.md` (not nested one level deeper), then restart Claude Code. You can also say "use the doc-maker skill". |
-| `import one` fails | Activate the venv where one is installed, or tell Claude which Python to use. |
+| `import one` fails / wrong Python is used | Tell Claude where one is (e.g. "one is in C:\one" or the full path of its `.venv` python); it re-runs `find_python.py --one <folder>` and remembers it. |
+| `No module named pip` | The venv was made by uv. Install with `uv pip install --python <venv python> <package>`. |
 | PDF export fails | Close the deck if it is open in PowerPoint / LibreOffice and ask again. |
 | Black or empty images on Linux | Update the GPU driver, or run under `xvfb-run`. |
 

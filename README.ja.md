@@ -144,15 +144,30 @@ venv\Scripts\activate              # Windows（Linux/macOS：source venv/bin/act
 pip install -e .
 ```
 
-Claude と作業するときも同じ Python（または venv）を使い、`import one` が通るようにしてください。
-確認：`python -c "import one; print(one.__file__)"`。
+[uv](https://docs.astral.sh/uv/) を使う場合（venv に pip は入らず、有効化も不要）：
+
+```bash
+git clone https://github.com/wanweiwei07/one.git
+cd one
+uv venv --python 3.12              # one/.venv が作られる
+uv pip install --python .venv -e .
+```
+
+Claude を起動する前に venv を有効化する必要はありません。`doc-maker/scripts/find_python.py` が
+`$VIRTUAL_ENV` / `$CONDA_PREFIX`、作業フォルダとその親の `.venv` / `venv`、それらの隣やホームフォルダの
+`one/.venv` / `one/venv` を探し、見つけた Python を記憶します。uv の venv にはパッケージを
+`uv pip install --python <その python>` で入れます。なお one のフォルダで `uv sync` を実行すると、
+one の `uv.lock` にないパッケージ（python-pptx など）は削除されるので、その後もう一度チェックしてください。
+
+確認：`<venv の python> -c "import one; print(one.__file__)"`。
 
 ## 4. トラブルシューティング
 
 | 問題 | 対処 |
 |---|---|
 | Claude がスキルを使わない | `SKILL.md` が `<スキルフォルダ>/doc-maker/SKILL.md` にあるか（1 階層深くなっていないか）確認し、Claude Code を再起動。「doc-maker スキルを使って」と頼んでも OK。 |
-| `import one` が失敗する | one をインストールした venv を有効化するか、使う Python を Claude に伝える。 |
+| `import one` が失敗する・違う Python が使われる | one の場所を Claude に伝える（例：「one は C:\one にある」や `.venv` の python のフルパス）。`find_python.py --one <フォルダ>` で探し直し、記憶します。 |
+| `No module named pip` | uv で作った venv です。`uv pip install --python <venv の python> <パッケージ>` で入れます。 |
 | PDF の書き出しに失敗する | PowerPoint / LibreOffice で開いているスライドを閉じて、もう一度依頼する。 |
 | Linux で画像が黒い・空になる | GPU ドライバを更新するか、`xvfb-run` で実行する。 |
 

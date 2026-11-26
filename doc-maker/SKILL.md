@@ -26,8 +26,23 @@ Talk to the user in the language they use.
 
 ## 1. Check the environment first
 
-Find a Python that can `import one` (try `python`, then `py -3.12`, then `py`).
-Run:
+`one` is often installed in a virtual environment (uv `.venv`, venv, conda)
+that is **not activated** in your shell, so do not just take `python` from PATH.
+Find the right interpreter with any Python 3 (`python`, `python3` or `py`):
+
+```
+python SKILL_SCRIPTS/find_python.py                  # searches the usual places
+python SKILL_SCRIPTS/find_python.py --one <folder>   # the user's one checkout
+python SKILL_SCRIPTS/find_python.py --python <exe>   # an interpreter the user named
+```
+
+It tries, in order: `--one`, the interpreter remembered from the last session,
+`$VIRTUAL_ENV` / `$CONDA_PREFIX`, `.venv` / `venv` in the current folder and its
+parents, `one/.venv` / `one/venv` next to them or in the home folder, then
+`python` / `py` on PATH. It prints `PYTHON=` (call it `<python>` below; use the
+full path, never `activate`), `KIND=` and `INSTALL=` (the install command for that
+interpreter). If nothing is found, ask the user where `one` is installed and
+re-run with `--one` or `--python`. Then run:
 
 ```
 <python> SKILL_SCRIPTS/check_env.py            # or --slides / --paper for just one part
@@ -40,7 +55,12 @@ For every `MISSING` line:
   install it**. Install only after they say yes; then re-run the check.
 - **one**: same — explain it is the lab's robotics library
   (https://github.com/wanweiwei07/one), ask where to clone it, and with their
-  OK run the printed `git clone … && pip install -e .`.
+  OK run the printed command (with uv it creates `one/.venv`), then re-run
+  `find_python.py --one <folder>`.
+- **Installing into a uv venv** (`KIND=uv venv`): it has no pip; always use the
+  printed `uv pip install --python <python> …`. Do not run `uv sync` / `uv run`
+  in the one checkout on your own: `uv sync` removes packages that are not in
+  one's `uv.lock`, including the ones doc-maker just installed.
 - **PowerPoint / LibreOffice** (needed to export slides to PDF): on Windows
   PowerPoint is preferred, but you cannot install it — ask the user to install
   Microsoft PowerPoint themselves, or offer to install LibreOffice instead. On
