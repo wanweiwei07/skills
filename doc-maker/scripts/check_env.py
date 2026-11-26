@@ -1,6 +1,7 @@
 """Check everything doc-maker needs and print an install hint for each gap.
 
-Run with the Python interpreter that should have `one` installed:
+Run with the Python interpreter that should have `one` installed (find it with
+find_python.py; it may be an unactivated uv / venv / conda environment):
     python check_env.py            # all checks
     python check_env.py --slides   # only what slides need
     python check_env.py --paper    # only what the LaTeX paper needs
@@ -8,6 +9,7 @@ Exit code 0 = all required items present, 1 = something missing.
 """
 import argparse
 import importlib
+import importlib.util
 import os
 import shutil
 import subprocess
@@ -30,9 +32,26 @@ def _code_cmd():
     return None
 
 
+def _env_kind():
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import find_python
+    return find_python.env_kind(sys.executable)
+
+
+def _pip_cmd():
+    """Install command for *this* interpreter. uv venvs have no pip by default."""
+    exe = f'"{sys.executable}"' if " " in sys.executable else sys.executable
+    has_pip = importlib.util.find_spec("pip") is not None
+    if _env_kind() == "uv venv" or not has_pip:
+        if shutil.which("uv"):
+            return f"uv pip install --python {exe}"
+        return f"{exe} -m ensurepip && {exe} -m pip install"
+    return f"{exe} -m pip install"
+
+
 def check_python():
     ok = sys.version_info >= (3, 12)
-    return ok, f"{sys.version.split()[0]} ({sys.executable})", \
+    return ok, f"{sys.version.split()[0]} ({sys.executable}, {_env_kind()})", \
         "one needs Python >= 3.12; install from python.org or `winget install Python.Python.3.12`"
 
 
@@ -51,7 +70,7 @@ def check_ffmpeg():
         import imageio_ffmpeg
         return True, imageio_ffmpeg.get_ffmpeg_exe(), ""
     except Exception as e:  # noqa: BLE001
-        return False, str(e), f"{sys.executable} -m pip install imageio imageio-ffmpeg"
+        return False, str(e), f"{PIP} imageio imageio-ffmpeg"
 
 
 def check_vscode():
@@ -113,9 +132,14 @@ def check_latex():
     return True, shutil.which("latexmk"), ""
 
 
-PIP = f"{sys.executable} -m pip install"
-ONE_HINT = ("git clone https://github.com/wanweiwei07/one.git && cd one && "
-            f"{PIP} -e .")
+PIP = _pip_cmd()
+if shutil.which("uv"):
+    ONE_HINT = ("git clone https://github.com/wanweiwei07/one.git && cd one && "
+                "uv venv --python 3.12 && uv pip install --python .venv -e .   "
+                "(then use one/.venv as the Python)")
+else:
+    ONE_HINT = ("git clone https://github.com/wanweiwei07/one.git && cd one && "
+                f"{PIP} -e .")
 
 CORE = [
     ("Python >= 3.12", check_python, True),

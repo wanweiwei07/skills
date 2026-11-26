@@ -144,15 +144,29 @@ venv\Scripts\activate              # Windows（Linux/macOS：source venv/bin/act
 pip install -e .
 ```
 
-和 Claude 一起工作时请使用同一个 Python（或 venv），保证 `import one` 能成功。
-检查方法：`python -c "import one; print(one.__file__)"`。
+使用 [uv](https://docs.astral.sh/uv/) 时（venv 里没有 pip，也不需要激活）：
+
+```bash
+git clone https://github.com/wanweiwei07/one.git
+cd one
+uv venv --python 3.12              # 生成 one/.venv
+uv pip install --python .venv -e .
+```
+
+启动 Claude 前不需要激活 venv：`doc-maker/scripts/find_python.py` 会查找 `$VIRTUAL_ENV` / `$CONDA_PREFIX`、
+工作文件夹及其上级的 `.venv` / `venv`，以及它们旁边或主目录下的 `one/.venv` / `one/venv`，并记住找到的 Python。
+uv 的 venv 用 `uv pip install --python <该 python>` 安装包。注意：在 one 文件夹里运行 `uv sync` 会删除
+one 的 `uv.lock` 里没有的包（python-pptx 等），之后请重新运行检查。
+
+检查方法：`<venv 的 python> -c "import one; print(one.__file__)"`。
 
 ## 4. 常见问题
 
 | 问题 | 解决办法 |
 |---|---|
 | Claude 没有用这个 skill | 确认 `SKILL.md` 在 `<skills 文件夹>/doc-maker/SKILL.md`（没有多套一层文件夹），然后重启 Claude Code。也可以直接说“用 doc-maker skill”。 |
-| `import one` 失败 | 激活装了 one 的 venv，或告诉 Claude 该用哪个 Python。 |
+| `import one` 失败 / 用错了 Python | 告诉 Claude one 在哪里（例如“one 在 C:\one”或其 `.venv` 中 python 的完整路径）；它会用 `find_python.py --one <文件夹>` 重新查找并记住。 |
+| `No module named pip` | 这是 uv 创建的 venv。用 `uv pip install --python <venv 的 python> <包名>` 安装。 |
 | 导出 PDF 失败 | 先关掉在 PowerPoint / LibreOffice 里打开的这份幻灯片，再让 Claude 重试。 |
 | Linux 上图片是黑的或空白 | 更新显卡驱动，或用 `xvfb-run` 运行。 |
 
