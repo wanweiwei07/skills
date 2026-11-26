@@ -60,6 +60,7 @@ def apply_matplotlib():
         "font.size": FONT_PT, "axes.titlesize": FONT_PT, "axes.labelsize": FONT_PT,
         "xtick.labelsize": FONT_PT, "ytick.labelsize": FONT_PT,
         "legend.fontsize": FONT_PT, "figure.titlesize": FONT_PT,
+        "legend.title_fontsize": FONT_PT, "figure.labelsize": FONT_PT,
         "lines.linewidth": LINE_PT, "axes.linewidth": LINE_PT,
         "patch.linewidth": LINE_PT, "hatch.linewidth": LINE_PT,
         "grid.linewidth": LINE_PT * 0.5,
@@ -75,7 +76,9 @@ def apply_matplotlib():
         # (matplotlib itself loads helvet for the sans-serif text)
         rc.update({
             "text.usetex": True,
-            "text.latex.preamble": r"\usepackage{amsmath,amssymb,bm}",
+            # tick numbers ($\mathdefault{..}$) in the sans text font, like all other text
+            "text.latex.preamble": r"\usepackage{amsmath,amssymb,bm}"
+                                   r"\renewcommand{\mathdefault}[1]{\text{#1}}",
             "font.sans-serif": ["Helvetica"],
         })
     else:
@@ -91,8 +94,34 @@ def figure(layout="half", **kw):
     return plt.subplots(figsize=size_in(layout), **kw)
 
 
+def unify_text(fig, size=FONT_PT):
+    """Every piece of text in the figure at one size (titles, labels, ticks,
+    legends, annotations, colorbars, offset text). Returns what was changed."""
+    from matplotlib.text import Text
+    changed = []
+    fig.draw_without_rendering()                    # create tick labels etc.
+    for ax in fig.axes:                             # ticks are rebuilt on draw: set at the source
+        for axis in (ax.xaxis, ax.yaxis):
+            labels = axis.get_ticklabels(which="both")
+            sizes = {round(l.get_fontsize(), 2) for l in labels if l.get_text()}
+            if sizes - {float(size)}:
+                changed.append((f"{axis.axis_name} ticks", max(sizes - {float(size)})))
+                ax.tick_params(axis=axis.axis_name, which="both", labelsize=size)
+    for t in fig.findobj(Text):
+        if t.get_visible() and t.get_text().strip() and abs(t.get_fontsize() - size) > 0.01:
+            changed.append((t.get_text()[:30], t.get_fontsize()))
+            t.set_fontsize(size)
+    return changed
+
+
 def save(fig, path):
+    """Save at the exact slide size. All text is forced to 18 pt first, so one
+    figure never mixes big and small text; a note lists what was resized."""
     import os
+    changed = unify_text(fig)
+    if changed:
+        print(f"figstyle: set {len(changed)} text item(s) to {FONT_PT} pt in {os.path.basename(path)}: "
+              + ", ".join(f"{t!r} ({s:g} pt)" for t, s in changed[:6]))
     os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
     fig.savefig(path, dpi=DPI)        # no bbox "tight": keep the exact slide size
     return os.path.abspath(path)

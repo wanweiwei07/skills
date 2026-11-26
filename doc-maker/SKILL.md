@@ -72,7 +72,8 @@ Use the Python that passed the check for every later step.
 | Rule | Value |
 |---|---|
 | Slide text | Cover title **44 pt**; slide titles **32 pt**; body text **24 pt**; secondary text (sub-bullets, labels under pictures, captions) **20 pt**. Formulas on slides are typeset at the size of the text they belong to |
-| Text inside figures | **18 pt**: plot ticks / axis labels / legends, labels drawn into diagrams or renders |
+| Text inside figures | **18 pt, one size and one typeface for all text in a figure**: titles, axis labels, ticks, legends, annotations, colorbars, labels drawn into diagrams or renders. No big title over small ticks, no tiny annotations. `figstyle.save()` forces every text item to 18 pt and prints what it changed; never pass `fontsize=` / `labelsize=`. Only formulas use the LaTeX math font |
+| Concise slides | Slides carry **keywords and short phrases, not paragraphs**: each bullet one line (at most two), at most **6** bullet rows and about **40 words** per slide, captions one line. Full sentences, explanations and numbers to say aloud go into speaker notes (`deck.notes(...)`). If there is more to show, split it over two slides or replace the text with a figure. `deck.save()` warns when a slide breaks these limits; fix every warning |
 | Line width | **1.5 pt** for every line: plot curves, axes, ticks, arrows / connectors drawn on slides |
 | Logo | On **every slide except the cover**: the lab logo (`assets/logo.png`, transparent background) sits in the top-right corner of the title bar, 0.85 in tall. Keep that corner free. The cover has no logo. `Deck(logo=None)` only if the user asks for no logo, `Deck(logo="path.png")` for another logo |
 | Formulas | Typeset by **LaTeX** — in slides too. Never use PowerPoint's equation editor or Unicode pseudo-math |
@@ -159,7 +160,14 @@ figstyle.save(fig, "../imgs/joint_traj_half.png")   # keeps the exact slide size
 ```
 
 Do not override the font sizes or line widths. For many subplots use
-`figstyle.figure("full", ncols=2)` etc.
+`figstyle.figure("full", ncols=2)` etc. Keep text in figures short too
+(axis label, unit, a few-word legend entry); explanations belong on the slide
+or in the caption, not inside the plot.
+
+To put labels or arrows on a `one` render, do not draw text with PIL: show the
+render in a figstyle figure (`fig, ax = figstyle.figure("half");
+ax.imshow(img); ax.axis("off"); ax.annotate(...)`) and `figstyle.save()` it,
+so the labels are 18 pt like every other figure.
 
 ## 5. Slides
 
@@ -181,7 +189,8 @@ deck.bullets("Method", ["plain text, 24 pt", r"update: $\dot q = J^{+}(q)\,v$",
                         ["sub-bullet, 20 pt", "another"]])          # list = sub-bullets
 deck.equation(r"\min_q \tfrac12\|q-q_0\|^2", title="Objective")      # display formula
 deck.video("../videos/bunny_orbit.mp4", title="Orbit view")          # poster = .png
-deck.save("../slides/<name>.pptx")
+deck.notes("What to say on this slide, in full sentences.")          # speaker notes
+deck.save("../slides/<name>.pptx")          # prints WARNING lines: fix them all
 ```
 
 ```

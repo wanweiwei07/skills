@@ -105,7 +105,8 @@ the LaTeX PDF is rebuilt every time you save `main.tex`.
 Every document follows the same rules, so all slides from the lab look alike:
 
 - Slide text: cover title **44 pt**, slide titles **32 pt**, body **24 pt**, secondary text (sub-bullets, labels, captions) **20 pt**
-- Text inside figures (plots, diagrams): **18 pt**
+- Text inside figures (plots, diagrams): **18 pt**, one size and one typeface for every piece of text in a figure (enforced when the figure is saved)
+- Concise slides: keywords and short phrases, not paragraphs; one-line bullets, at most 6 bullets and about 40 words per slide; full sentences go into speaker notes
 - **1.5 pt** lines (plot curves, axes, arrows)
 - No short dangling lines: when a paragraph or bullet ends with a line holding only a word or two, Claude rewords it so the words move up into the line above (checked automatically with `check_lines.py`)
 - Lab logo in the top-right corner of every slide except the cover; replace `doc-maker/assets/logo.png` (transparent PNG) to use your own

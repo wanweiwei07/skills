@@ -52,6 +52,8 @@ def line_h(size_pt):
 TEXT_COLOR = RGBColor(0x20, 0x20, 0x20)
 EMU_PER_PT = 12700
 DEFAULT_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "logo.png")
+MAX_ROWS = 6            # bullet rows (incl. sub-bullets) per slide
+MAX_WORDS = 40          # words of text per slide (a CJK character counts 1/2)
 LOGO_H = Inches(0.85)                   # logo height in the title bar
 LOGO_TOP = Inches(0.15)                 # gap above the logo
 
@@ -59,7 +61,7 @@ LOGO_TOP = Inches(0.15)                 # gap above the logo
 class Deck:
     def __init__(self, math_dir="../imgs/math", font="Arial", logo=DEFAULT_LOGO):
         self.logo = os.path.abspath(logo) if logo and os.path.exists(logo) else None
-        self.warnings = []          # short last lines in LaTeX-typeset rows
+        self.warnings = []          # wordy slides, short last lines (printed by save())
         self.prs = Presentation()
         self.prs.slide_width, self.prs.slide_height = W, H
         self.font = font
@@ -154,6 +156,11 @@ class Deck:
             self._caption(s, caption)
         return s
 
+    def notes(self, text):
+        """Speaker notes for the slide just added: the place for the full
+        sentences and details that do not belong on the slide."""
+        self.prs.slides[-1].notes_slide.notes_text_frame.text = text
+
     def save(self, path):
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         self.prs.save(path)
@@ -191,6 +198,8 @@ class Deck:
         return top, bottom
 
     def _caption(self, s, caption):
+        if "$" not in caption and _text_width_pt(caption, SMALL_PT) > (W - 2 * MARGIN) / EMU_PER_PT:
+            self._warn(f"caption longer than one line, shorten it: {caption[:50]!r}")
         self._line(s, caption, MARGIN, H - MARGIN - line_h(SMALL_PT), W - 2 * MARGIN,
                    size=SMALL_PT, center=True)
 
@@ -211,11 +220,23 @@ class Deck:
                     png, w_pt, h_pt = latex_math.render(mark + t, self.math_dir, size_pt=size,
                                                         max_width_in=rw / 914400)
                     self._check_runt(png, h_pt, size, t)
+                    n = max(1, round(h_pt / (size * 1.25)))
                     rows.append(("img", png, indent, Emu(int(w_pt * EMU_PER_PT)),
                                  Emu(int(h_pt * EMU_PER_PT)), size))
                 else:
                     n = max(1, math.ceil(_text_width_pt(mark + t, size) / (rw / EMU_PER_PT)))
                     rows.append(("txt", mark + t, indent, rw, line_h(size) * n + Pt(4), size))
+                if n > 2:
+                    self._warn(f"bullet runs to {n} lines, cut it to a short phrase "
+                               f"(1 line, at most 2; details go to deck.notes()): {t[:50]!r}")
+        if len(rows) > MAX_ROWS:
+            self._warn(f"{len(rows)} bullet rows, keep at most {MAX_ROWS} (split the slide "
+                       f"or move details to deck.notes())")
+        words = sum(_word_count(t) for it in items
+                    for t in (it if isinstance(it, (list, tuple)) else [it]))
+        if words > MAX_WORDS:
+            self._warn(f"about {words} words of text, keep it under {MAX_WORDS}: use "
+                       f"keywords, not sentences")
         space = Pt(10)
         total = sum(r[4] for r in rows) + space * (len(rows) - 1)
         cy = y + ((h - total) / 2 if center_v and total < h else 0)
@@ -226,6 +247,9 @@ class Deck:
                 self._text(s, content, x + indent, cy, rw, rh, size=size, anchor=MSO_ANCHOR.TOP)
             cy += rh + space
 
+    def _warn(self, msg):
+        self.warnings.append(f"slide {len(self.prs.slides)}: {msg}")
+
     def _check_runt(self, png, h_pt, size, text):
         """A LaTeX row that wrapped and left only a few words on its last line
         is recorded in self.warnings (printed by save())."""
@@ -233,9 +257,7 @@ class Deck:
             return
         frac = _last_line_frac(png[:-4] + ".pdf")
         if frac is not None and frac < 1 / 2:
-            self.warnings.append(
-                f"slide {len(self.prs.slides)}: last line only {frac:.0%} full, reword to "
-                f"pull it up: {text[:60]!r}")
+            self._warn(f"last line only {frac:.0%} full, reword to pull it up: {text[:60]!r}")
 
     def _line(self, s, text, x, y, w, size=BODY_PT, center=False, bold=False):
         if "$" in text:
@@ -315,6 +337,15 @@ def _last_line_frac(pdf):
     left = min(r[0] for r in rows)
     width = max(r[2] for r in rows) - left
     return (rows[-1][2] - rows[-1][0]) / width if width > 0 else None
+
+
+def _word_count(text):
+    """Words, ignoring LaTeX math; two CJK characters count as one word."""
+    import re
+    text = re.sub(r"\$[^$]*\$", " x ", text)
+    cjk = sum(1 for ch in text if ord(ch) > 0x2E80)
+    latin = "".join(" " if ord(ch) > 0x2E80 else ch for ch in text)
+    return len(latin.split()) + (cjk + 1) // 2
 
 
 def _fit(iw, ih, x, y, w, h):
